@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAppEditor } from '../editor/useEditor'
 import { EditorPanel } from '../editor/EditorPanel'
 import { useComments } from '../comments/useComments'
@@ -62,6 +62,20 @@ export default function App() {
     })
   }
 
+  useEffect(() => {
+    const container = document.querySelector('.ProseMirror')
+    if (!container) return
+    container.querySelectorAll('.comment-highlight').forEach(el => {
+      el.classList.toggle('active', el.getAttribute('data-comment-id') === activeCommentId)
+    })
+  }, [activeCommentId])
+
+  useEffect(() => {
+    if (activeCommentId) {
+      document.getElementById(`comment-card-${activeCommentId}`)?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+    }
+  }, [activeCommentId])
+
   const handleCopy = () => {
     if (!editor) return
     const markdown = serializeMarkdown(editor.getJSON(), comments)
@@ -96,7 +110,10 @@ export default function App() {
         commentCount={comments.length}
       />
       <main className="flex flex-1 overflow-hidden">
-        <EditorPanel editor={editor} />
+        <EditorPanel
+          editor={editor}
+          onClickComment={(id) => setActiveCommentId(id)}
+        />
         {editor && (
           <CommentBubbleMenu editor={editor} onAddComment={handleAddComment} />
         )}

@@ -1,6 +1,7 @@
 import { useAppEditor } from '../editor/useEditor'
 import { EditorPanel } from '../editor/EditorPanel'
 import { useComments } from '../comments/useComments'
+import { CommentBubbleMenu } from '../editor/CommentBubbleMenu'
 
 const SAMPLE_MARKDOWN = `# Welcome to FeedbackEditor
 
@@ -10,8 +11,23 @@ This is a simple markdown editor for annotating AI-generated text.`
 
 export default function App() {
   const editor = useAppEditor(SAMPLE_MARKDOWN)
-  // commentsState will be wired up in later tasks
-  void useComments()
+  const {
+    comments: _comments,
+    addComment,
+    updateComment: _updateComment,
+    deleteComment: _deleteComment,
+    clearComments: _clearComments,
+    activeCommentId: _activeCommentId,
+    setActiveCommentId,
+  } = useComments()
+
+  const handleAddComment = (selectedText: string) => {
+    if (!editor) return
+    const id = crypto.randomUUID()
+    editor.chain().focus().setComment(id).run()
+    addComment(id, '', selectedText)
+    setActiveCommentId(id)
+  }
 
   return (
     <div className="flex flex-col h-screen">
@@ -28,6 +44,9 @@ export default function App() {
       </header>
       <main className="flex flex-1 overflow-hidden">
         <EditorPanel editor={editor} />
+        {editor && (
+          <CommentBubbleMenu editor={editor} onAddComment={handleAddComment} />
+        )}
         <aside className="w-80 border-l border-gray-200 bg-gray-50 p-4 overflow-y-auto">
           <p className="text-gray-400">Sidebar will go here</p>
         </aside>

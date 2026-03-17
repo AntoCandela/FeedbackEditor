@@ -76,6 +76,32 @@ export default function App() {
     }
   }, [activeCommentId])
 
+  useEffect(() => {
+    if (!editor) return
+
+    const handler = () => {
+      // Collect all commentIds present in the editor
+      const editorIds = new Set<string>()
+      editor.state.doc.descendants((node) => {
+        node.marks?.forEach(mark => {
+          if (mark.type.name === 'comment' && mark.attrs.commentId) {
+            editorIds.add(mark.attrs.commentId as string)
+          }
+        })
+      })
+
+      // Remove orphan comments from state (no matching mark in editor)
+      for (const comment of comments) {
+        if (!editorIds.has(comment.id)) {
+          deleteComment(comment.id)
+        }
+      }
+    }
+
+    editor.on('update', handler)
+    return () => { editor.off('update', handler) }
+  }, [editor, comments, deleteComment])
+
   const handleCopy = () => {
     if (!editor) return
     const markdown = serializeMarkdown(editor.getJSON(), comments)

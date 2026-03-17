@@ -103,6 +103,10 @@ This separation follows the humble object pattern: the editor mark is a thin dat
 
 This keeps the serialization logic decoupled from tiptap-markdown's internals, making it resilient to library updates.
 
+**Overlapping comments are not allowed.** If the user's selection intersects an existing comment mark, the "Add Comment" button in the bubble menu is disabled. This avoids nested delimiter ambiguity in the exported markdown.
+
+**`highlightedText` is a snapshot captured at comment-creation time.** If the user edits the highlighted text in the editor, the sidebar snippet does not auto-update. This is acceptable for v1 since the primary workflow is read-then-comment, not heavy editing.
+
 ## UI Layout
 
 ```
@@ -138,7 +142,7 @@ This keeps the serialization logic decoupled from tiptap-markdown's internals, m
 | Edit comment in sidebar | Updates comment text in state |
 | Delete comment | Removes highlight and sidebar card |
 | "Copy with Comments" | Serializes to markdown + system prompt, copies to clipboard, shows toast |
-| "Paste New Text" | Warns if unsaved comments, clears editor, parses new markdown with any existing delimiters |
+| "Paste New Text" | Shows a browser `confirm()` dialog if any comments exist ("You have N comments. Pasting new text will remove them. Continue?"). On confirm: clears editor and comments, parses new markdown with any existing delimiters |
 
 ## Component Specifications
 
@@ -185,21 +189,56 @@ interface UseComments {
 
 ### Serializer (Export)
 
-1. Get markdown from `editor.storage.markdown.getMarkdown()`
-2. Walk the Tiptap document JSON to find all comment mark positions
-3. Map positions to their markdown string offsets
-4. Inject `{start-comment}` and `{end-comment: feedback}` at the correct positions
-5. Prepend system prompt
-6. Return final string
+Strategy: **walk-and-inject** — serialize each node individually while tracking comment marks, injecting delimiters during the walk rather than post-processing the final markdown string. This avoids the ProseMirror-to-markdown position mapping problem entirely.
+
+1. Walk the Tiptap document JSON tree node by node
+2. For each text node, check if it has a `comment` mark
+3. If yes: look up the comment text from React state using `commentId`, emit `{start-comment}` before the text content and `{end-comment: feedback}` after it
+4. If no: emit the text content as-is with its markdown formatting
+5. Combine all emitted content into the final markdown string
+6. Prepend system prompt
+7. Return final string
 
 ### Parser (Import)
 
-1. Regex-match all `{start-comment}...{end-comment: ...}` patterns
-2. Extract highlighted text and feedback for each
-3. Replace delimiters with `<span data-comment-id="UUID">highlighted text</span>`
-4. Generate comment entries for React state
-5. Feed HTML to Tiptap editor
-6. Return comment entries to populate `useComments`
+The parser uses a non-greedy regex that skips content inside fenced code blocks to avoid false positives (e.g., documentation that mentions `{start-comment}` literally).
+
+1. Pre-process: identify and mask fenced code blocks (``` regions)
+2. Regex-match all `{start-comment}(.*?){end-comment:\s*(.*?)}` patterns in non-code regions
+3. Extract highlighted text and feedback for each match
+4. Replace delimiters with `<span data-comment-id="UUID">highlighted text</span>`
+5. Unmask code blocks
+6. Generate comment entries for React state
+7. Feed HTML to Tiptap editor via `setContent()`
+8. Return comment entries to populate `useComments`
+
+## Error Handling
+
+| Scenario | Behavior |
+|----------|----------|
+| Clipboard API unavailable or denied | Fall back to selecting text in a modal for manual Ctrl+C. Show inline message explaining why. |
+| Pasted content is empty or not valid markdown | Accept as plain text — Tiptap handles non-markdown gracefully as paragraphs. |
+| Malformed delimiters on import (e.g., `{start-comment}` without matching `{end-comment}`) | Skip the malformed delimiter, import the text as-is without a comment mark. |
+| Orphan mark (commentId in editor with no matching React state entry) | On detection (e.g., during serialization or sidebar render), silently remove the orphan mark from the editor. |
+| Orphan comment (React state entry with no matching mark in editor) | On detection, silently remove the orphan entry from state. |
+
+## Supported Markdown
+
+CommonMark subset as supported by `tiptap-markdown`: headings, paragraphs, bold, italic, strikethrough, links, images, inline code, fenced code blocks, blockquotes, ordered/unordered lists. Tables and footnotes are out of scope for v1.
+
+## Requirements Reference
+
+| ID | Name | Type |
+|----|------|------|
+| REQ-1 | Custom Tiptap Comment Mark | functional |
+| REQ-2 | Comment delimiter format | functional |
+| REQ-3 | System prompt on copy | functional |
+| REQ-4 | Google Docs-style comment sidebar | functional |
+| REQ-5 | Markdown rendering | functional |
+| REQ-6 | Clipboard copy with visual feedback | functional |
+| REQ-7 | Markdown import with comment parsing | functional |
+| REQ-8 | React + Vite + Tiptap + Tailwind stack | non-functional |
+| REQ-9 | Standalone single-page app | non-functional |
 
 ## Future Milestones (Out of Scope for v1)
 

@@ -71,9 +71,12 @@ export default function App() {
   const handleRevert = (id: string) => {
     const version = loadVersion(id)
     if (!version || !editor) return
-    // Auto-save current state before reverting
+    // Auto-save current state before reverting, but only if content differs from latest version
     const currentMarkdown = (editor.storage as unknown as { markdown: MarkdownStorage }).markdown?.getMarkdown?.() ?? ''
-    saveVersion(currentMarkdown, comments, 'copy')
+    const latestVersion = versions[0]
+    if (!latestVersion || latestVersion.markdown !== currentMarkdown) {
+      saveVersion(currentMarkdown, comments, 'copy')
+    }
     // Load the selected version
     editor.commands.setContent(version.markdown)
     // Clear current comments and restore version's comments

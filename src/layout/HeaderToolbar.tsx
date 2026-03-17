@@ -1,12 +1,11 @@
 interface HeaderToolbarProps {
   onCopy: () => void
-  onPaste: () => void
   copied: boolean
   copyError: string | null
   commentCount: number
 }
 
-export function HeaderToolbar({ onCopy, onPaste, copied, copyError, commentCount }: HeaderToolbarProps) {
+export function HeaderToolbar({ onCopy, copied, copyError, commentCount }: HeaderToolbarProps) {
   return (
     <header className="flex items-center justify-between px-6 py-3 border-b border-gray-200 bg-white">
       <h1 className="text-lg font-semibold text-gray-800">FeedbackEditor</h1>
@@ -17,12 +16,6 @@ export function HeaderToolbar({ onCopy, onPaste, copied, copyError, commentCount
         {copyError && (
           <span className="text-sm text-red-600">{copyError}</span>
         )}
-        <button
-          onClick={onPaste}
-          className="px-4 py-2 text-sm bg-gray-100 text-gray-700 rounded hover:bg-gray-200"
-        >
-          Paste New Text
-        </button>
         <button
           onClick={onCopy}
           className="px-4 py-2 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"

@@ -16,7 +16,9 @@ export function CommentCard({ comment, isActive, onUpdate, onDelete, onClick }: 
 
   useEffect(() => {
     if (isEditing && inputRef.current) {
-      inputRef.current.focus()
+      // Delay focus to win the race against editor.chain().focus()
+      const timer = setTimeout(() => inputRef.current?.focus(), 100)
+      return () => clearTimeout(timer)
     }
   }, [isEditing])
 

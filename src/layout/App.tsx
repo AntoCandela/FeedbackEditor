@@ -2,6 +2,7 @@ import { useAppEditor } from '../editor/useEditor'
 import { EditorPanel } from '../editor/EditorPanel'
 import { useComments } from '../comments/useComments'
 import { CommentBubbleMenu } from '../editor/CommentBubbleMenu'
+import { CommentSidebar } from '../comments/CommentSidebar'
 
 const SAMPLE_MARKDOWN = `# Welcome to FeedbackEditor
 
@@ -12,12 +13,12 @@ This is a simple markdown editor for annotating AI-generated text.`
 export default function App() {
   const editor = useAppEditor(SAMPLE_MARKDOWN)
   const {
-    comments: _comments,
+    comments,
     addComment,
-    updateComment: _updateComment,
-    deleteComment: _deleteComment,
+    updateComment,
+    deleteComment,
     clearComments: _clearComments,
-    activeCommentId: _activeCommentId,
+    activeCommentId,
     setActiveCommentId,
   } = useComments()
 
@@ -27,6 +28,29 @@ export default function App() {
     editor.chain().focus().setComment(id).run()
     addComment(id, '', selectedText)
     setActiveCommentId(id)
+  }
+
+  const handleDeleteComment = (id: string) => {
+    deleteComment(id)
+    if (!editor) return
+    const { doc } = editor.state
+    doc.descendants((node, pos) => {
+      if (node.marks?.some(m => m.type.name === 'comment' && m.attrs.commentId === id)) {
+        editor.chain().focus().setTextSelection({ from: pos, to: pos + node.nodeSize }).unsetMark('comment').run()
+      }
+    })
+  }
+
+  const handleClickSidebarComment = (id: string) => {
+    setActiveCommentId(id)
+    if (!editor) return
+    const { doc } = editor.state
+    doc.descendants((node, pos) => {
+      if (node.marks?.some(m => m.type.name === 'comment' && m.attrs.commentId === id)) {
+        editor.chain().focus().setTextSelection({ from: pos, to: pos + node.nodeSize }).run()
+        return false
+      }
+    })
   }
 
   return (
@@ -47,9 +71,13 @@ export default function App() {
         {editor && (
           <CommentBubbleMenu editor={editor} onAddComment={handleAddComment} />
         )}
-        <aside className="w-80 border-l border-gray-200 bg-gray-50 p-4 overflow-y-auto">
-          <p className="text-gray-400">Sidebar will go here</p>
-        </aside>
+        <CommentSidebar
+          comments={comments}
+          activeCommentId={activeCommentId}
+          onUpdate={updateComment}
+          onDelete={handleDeleteComment}
+          onClickComment={handleClickSidebarComment}
+        />
       </main>
     </div>
   )

@@ -1,0 +1,12 @@
+@import "tailwindcss";
+
+.comment-highlight {
+  background-color: #FFF3CD;
+  cursor: pointer;
+  border-bottom: 2px solid #F0C36D;
+}
+
+.comment-highlight.active {
+  background-color: #FFE69C;
+  border-bottom-color: #E0A800;
+}

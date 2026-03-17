@@ -1,4 +1,4 @@
-import { useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useAppEditor } from '../editor/useEditor'
 import { EditorPanel } from '../editor/EditorPanel'
 import { useComments } from '../comments/useComments'
@@ -7,6 +7,9 @@ import { CommentSidebar } from '../comments/CommentSidebar'
 import { HeaderToolbar } from './HeaderToolbar'
 import { serializeMarkdown } from '../export/serializeMarkdown'
 import { useCopyToClipboard } from '../export/useCopyToClipboard'
+import { useVersionHistory } from '../history/useVersionHistory'
+import { VersionHistoryDropdown } from '../history/VersionHistoryDropdown'
+import type { MarkdownStorage } from 'tiptap-markdown'
 
 const SAMPLE_MARKDOWN = `# Welcome to FeedbackEditor
 
@@ -25,6 +28,8 @@ export default function App() {
   } = useComments()
 
   const { copied, error: copyError, copy, fallbackText, clearFallback } = useCopyToClipboard()
+  const { versions, saveVersion, loadVersion, clearHistory } = useVersionHistory()
+  const [showHistory, setShowHistory] = useState(false)
   const pendingCommentRef = useRef<string | null>(null)
 
   const handleAddComment = useCallback((selectedText: string) => {
@@ -61,6 +66,20 @@ export default function App() {
         return false
       }
     })
+  }
+
+  const handleRevert = (id: string) => {
+    const version = loadVersion(id)
+    if (!version || !editor) return
+    // Auto-save current state before reverting
+    const currentMarkdown = (editor.storage as unknown as { markdown: MarkdownStorage }).markdown?.getMarkdown?.() ?? ''
+    saveVersion(currentMarkdown, comments, 'copy')
+    // Load the selected version
+    editor.commands.setContent(version.markdown)
+    // Clear current comments and restore version's comments
+    comments.forEach(c => deleteComment(c.id))
+    version.comments.forEach(c => addComment(c.id, c.text, c.highlightedText))
+    setShowHistory(false)
   }
 
   useEffect(() => {
@@ -114,6 +133,9 @@ export default function App() {
 
   const handleCopy = () => {
     if (!editor) return
+    // Save version before copy
+    const currentMarkdown = (editor.storage as unknown as { markdown: MarkdownStorage }).markdown?.getMarkdown?.() ?? ''
+    saveVersion(currentMarkdown, comments, 'copy')
     const markdown = serializeMarkdown(editor.getJSON(), comments)
     copy(markdown)
   }
@@ -125,6 +147,24 @@ export default function App() {
         copied={copied}
         copyError={copyError}
         commentCount={comments.length}
+        historyButton={
+          <div className="relative">
+            <button
+              onClick={() => setShowHistory(!showHistory)}
+              className="px-4 py-2 text-sm bg-gray-100 text-gray-700 rounded hover:bg-gray-200"
+            >
+              History {versions.length > 0 && `(${versions.length})`}
+            </button>
+            {showHistory && (
+              <VersionHistoryDropdown
+                versions={versions}
+                onSelect={handleRevert}
+                onClear={clearHistory}
+                onClose={() => setShowHistory(false)}
+              />
+            )}
+          </div>
+        }
       />
       <main className="flex flex-1 overflow-hidden">
         <EditorPanel

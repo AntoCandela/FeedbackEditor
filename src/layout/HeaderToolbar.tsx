@@ -3,9 +3,10 @@ interface HeaderToolbarProps {
   copied: boolean
   copyError: string | null
   commentCount: number
+  historyButton: React.ReactNode
 }
 
-export function HeaderToolbar({ onCopy, copied, copyError, commentCount }: HeaderToolbarProps) {
+export function HeaderToolbar({ onCopy, copied, copyError, commentCount, historyButton }: HeaderToolbarProps) {
   return (
     <header className="flex items-center justify-between px-6 py-3 border-b border-gray-200 bg-white">
       <h1 className="text-lg font-semibold text-gray-800">FeedbackEditor</h1>
@@ -16,6 +17,7 @@ export function HeaderToolbar({ onCopy, copied, copyError, commentCount }: Heade
         {copyError && (
           <span className="text-sm text-red-600">{copyError}</span>
         )}
+        {historyButton}
         <button
           onClick={onCopy}
           className="px-4 py-2 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"

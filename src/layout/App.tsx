@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { useKeyboardShortcuts } from '../editor/useKeyboardShortcuts'
 import { useAppEditor } from '../editor/useEditor'
 import { EditorPanel } from '../editor/EditorPanel'
 import { useComments } from '../comments/useComments'
@@ -142,6 +143,16 @@ export default function App() {
     const markdown = serializeMarkdown(editor.getJSON(), comments)
     copy(markdown)
   }
+
+  useKeyboardShortcuts({
+    editor,
+    onCopy: handleCopy,
+    onAddComment: handleAddComment,
+    versions,
+    onRevert: handleRevert,
+    saveVersion,
+    comments,
+  })
 
   return (
     <div className="flex flex-col h-screen">

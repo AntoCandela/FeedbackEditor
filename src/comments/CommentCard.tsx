@@ -14,10 +14,10 @@ export function CommentCard({ comment, isActive, onUpdate, onDelete, onClick }: 
   const [isEditing, setIsEditing] = useState(!comment.text)
   const [draft, setDraft] = useState(comment.text)
   const inputRef = useRef<HTMLTextAreaElement>(null)
+  const cardRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (isEditing && inputRef.current) {
-      // Delay focus to win the race against editor.chain().focus()
       const timer = setTimeout(() => inputRef.current?.focus(), 100)
       return () => clearTimeout(timer)
     }
@@ -28,10 +28,25 @@ export function CommentCard({ comment, isActive, onUpdate, onDelete, onClick }: 
     setIsEditing(false)
   }
 
+  const handleCardClick = (e: React.MouseEvent) => {
+    // Don't trigger sidebar-to-editor navigation when interacting inside the card's content area
+    const target = e.target as HTMLElement
+    // Only navigate to editor highlight when clicking the card background/header, not content
+    if (target.closest('textarea') || target.closest('button')) return
+    onClick(comment.id)
+  }
+
+  const handleBlur = (e: React.FocusEvent) => {
+    // Only save if focus is leaving the card entirely, not moving within it
+    if (cardRef.current?.contains(e.relatedTarget as Node)) return
+    handleSave()
+  }
+
   return (
     <div
+      ref={cardRef}
       id={`comment-card-${comment.id}`}
-      onClick={() => onClick(comment.id)}
+      onClick={handleCardClick}
       className={`comment-card p-3 mb-2 rounded cursor-pointer transition-all duration-150 ease-out ${
         isActive
           ? 'border-l-4 border-l-[var(--accent)] border-t border-r border-b border-t-[var(--border)] border-r-[var(--border)] border-b-[var(--border)]'
@@ -52,7 +67,7 @@ export function CommentCard({ comment, isActive, onUpdate, onDelete, onClick }: 
           ref={inputRef}
           value={draft}
           onChange={e => setDraft(e.target.value)}
-          onBlur={handleSave}
+          onBlur={handleBlur}
           onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSave() } }}
           className="w-full text-sm p-1 border rounded resize-none focus:outline-none"
           style={{

@@ -6,10 +6,6 @@ interface HeaderToolbarProps {
   sidebarOpen: boolean
   onToggleSidebar: () => void
   historyButton: React.ReactNode
-  /** @deprecated kept for backward compat — ignored */
-  copied?: boolean
-  /** @deprecated kept for backward compat — ignored */
-  copyError?: string | null
 }
 
 export function HeaderToolbar({

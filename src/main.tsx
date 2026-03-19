@@ -2,11 +2,14 @@ import '@fontsource-variable/source-serif-4'
 import '@fontsource-variable/dm-sans'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
+import { ToastProvider } from './toast/ToastProvider'
 import App from './layout/App'
 import './index.css'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <App />
+    <ToastProvider>
+      <App />
+    </ToastProvider>
   </StrictMode>,
 )

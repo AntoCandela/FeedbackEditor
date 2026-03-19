@@ -1,3 +1,4 @@
+import { Clipboard, ClipboardPaste, X } from 'lucide-react'
 import type { Version } from './types'
 import { formatRelativeTime } from './formatRelativeTime'
 
@@ -23,9 +24,9 @@ export function VersionHistoryDropdown({ versions, onSelect, onClear, onClose }:
         </h3>
         <button
           onClick={onClose}
-          className="text-gray-400 hover:text-gray-600 text-sm"
+          className="text-gray-400 hover:text-gray-600 text-sm p-1"
         >
-          ✕
+          <X size={14} />
         </button>
       </div>
       <div className="max-h-80 overflow-y-auto">
@@ -42,7 +43,10 @@ export function VersionHistoryDropdown({ versions, onSelect, onClear, onClose }:
             >
               <div className="flex items-center gap-2">
                 <span className="text-sm">
-                  {version.trigger === 'copy' ? '📋' : '📥'}
+                  {version.trigger === 'copy'
+                    ? <Clipboard size={14} style={{ color: 'var(--text-secondary)' }} />
+                    : <ClipboardPaste size={14} style={{ color: 'var(--text-secondary)' }} />
+                  }
                 </span>
                 <span className="text-sm text-gray-700">
                   {version.trigger === 'copy' ? 'Copied' : 'Pasted'}

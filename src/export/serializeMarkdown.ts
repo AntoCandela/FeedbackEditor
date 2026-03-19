@@ -69,6 +69,33 @@ function serializeNode(node: TiptapNode, comments: Comment[]): string {
       return `\`\`\`${lang}\n${content}\n\`\`\``
     }
 
+    case 'table': {
+      const rows = (node.content ?? []).map(n => serializeNode(n, comments))
+      if (rows.length === 0) return ''
+      // Insert separator after header row
+      const headerCells = (node.content?.[0]?.content ?? []).length
+      const separator = '| ' + Array(headerCells).fill('---').join(' | ') + ' |'
+      return [rows[0], separator, ...rows.slice(1)].join('\n')
+    }
+
+    case 'tableRow': {
+      const cells = (node.content ?? []).map(n => serializeNode(n, comments))
+      return '| ' + cells.join(' | ') + ' |'
+    }
+
+    case 'tableHeader':
+    case 'tableCell':
+      return (node.content ?? []).map(n => serializeNode(n, comments)).join('')
+
+    case 'taskList':
+      return (node.content ?? []).map(n => serializeNode(n, comments)).join('\n')
+
+    case 'taskItem': {
+      const checked = node.attrs?.checked ? 'x' : ' '
+      const content = (node.content ?? []).map(n => serializeNode(n, comments)).join('')
+      return `- [${checked}] ${content}`
+    }
+
     case 'horizontalRule':
       return '---'
 

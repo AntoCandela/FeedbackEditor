@@ -33,7 +33,7 @@ Thumbs.db
 # AI tooling (local config, not tracked)
 .claude/
 .superpowers/
-docs/superpowers/
+docs/superpowers/plans/
 
 # Agent-specific skill symlinks (auto-generated from .agents/skills/)
 .agent/

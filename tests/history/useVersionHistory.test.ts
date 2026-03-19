@@ -2,7 +2,7 @@ import { renderHook, act } from '@testing-library/react'
 import { describe, it, expect, beforeEach } from 'vitest'
 import { useVersionHistory } from '../../src/history/useVersionHistory'
 
-const STORAGE_KEY = 'feedbackeditor-versions'
+const STORAGE_KEY = 'feedbackeditor-versions:v1'
 
 describe('useVersionHistory', () => {
   beforeEach(() => {

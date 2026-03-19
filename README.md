@@ -64,6 +64,18 @@ src/
 - **Vite 8** — build tool
 - **Vitest** — test runner
 
+## AI Agent Skills
+
+This project includes agent skills (`.agents/skills/`) that guide AI coding assistants when working on this codebase. They are not runtime dependencies — they provide rules and patterns for code generation and review.
+
+| Skill | Source | Purpose |
+|-------|--------|---------|
+| `vercel-react-best-practices` | [vercel-labs/agent-skills](https://github.com/vercel-labs/agent-skills) | React performance optimization rules (57 rules across 8 categories) |
+| `frontend-design` | [anthropics/skills](https://github.com/anthropics/skills) | Production-grade frontend design patterns |
+| `ui-ux-pro-max` | [nextlevelbuilder/ui-ux-pro-max-skill](https://github.com/nextlevelbuilder/ui-ux-pro-max-skill) | UI/UX design quality guidelines |
+
+Install them for your agent with [`npx skills`](https://github.com/nichochar/skills), or they'll be picked up automatically by compatible agents.
+
 ## License
 
 MIT

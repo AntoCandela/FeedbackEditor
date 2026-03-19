@@ -30,10 +30,15 @@ pnpm-debug.log*
 .DS_Store
 Thumbs.db
 
-# AI tooling (local only)
+# AI tooling (local config, not tracked)
 .claude/
 .superpowers/
 docs/superpowers/
+
+# Agent-specific skill symlinks (auto-generated from .agents/skills/)
+.agent/
+.factory/
+.droid/
 
 # Test coverage
 coverage/

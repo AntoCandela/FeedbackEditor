@@ -1,8 +1,9 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, type RefObject } from 'react'
 import { useKeyboardShortcuts } from '../editor/useKeyboardShortcuts'
 import { useAppEditor } from '../editor/useEditor'
 import { EditorPanel } from '../editor/EditorPanel'
 import { useComments } from '../comments/useComments'
+import type { Comment } from '../comments/types'
 import { CommentBubbleMenu } from '../editor/CommentBubbleMenu'
 import { CommentSidebar } from '../comments/CommentSidebar'
 import { HeaderToolbar } from './HeaderToolbar'
@@ -23,6 +24,7 @@ export default function App() {
     addComment,
     updateComment,
     deleteComment,
+    clearComments,
     activeCommentId,
     setActiveCommentId,
   } = useComments()
@@ -31,6 +33,9 @@ export default function App() {
   const { versions, saveVersion, loadVersion, clearHistory } = useVersionHistory()
   const [showHistory, setShowHistory] = useState(false)
   const pendingCommentRef = useRef<string | null>(null)
+  // Ref to avoid re-registering editor update handler on every comment change (rerender-dependencies)
+  const commentsRef: RefObject<Comment[]> = useRef(comments)
+  useEffect(() => { commentsRef.current = comments }, [comments])
 
   const handleAddComment = useCallback((selectedText: string) => {
     if (!editor) return
@@ -79,35 +84,34 @@ export default function App() {
     }
     // Load the selected version
     editor.commands.setContent(version.markdown)
-    // Clear current comments and restore version's comments
-    comments.forEach(c => deleteComment(c.id))
+    // Clear current comments and restore version's comments (batch instead of N individual deletes)
+    clearComments()
     version.comments.forEach(c => addComment(c.id, c.text, c.highlightedText))
     setShowHistory(false)
   }
 
+  // Highlight active comment in editor + scroll sidebar card into view
   useEffect(() => {
     const container = document.querySelector('.ProseMirror')
-    if (!container) return
-    container.querySelectorAll('.comment-highlight').forEach(el => {
-      el.classList.toggle('active', el.getAttribute('data-comment-id') === activeCommentId)
-    })
-  }, [activeCommentId])
-
-  useEffect(() => {
+    if (container) {
+      container.querySelectorAll('.comment-highlight').forEach(el => {
+        el.classList.toggle('active', el.getAttribute('data-comment-id') === activeCommentId)
+      })
+    }
     if (activeCommentId) {
       document.getElementById(`comment-card-${activeCommentId}`)?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
     }
   }, [activeCommentId])
 
+  // Clean up orphan comments when editor content changes.
+  // Uses commentsRef to avoid re-registering the handler on every comment change (rerender-dependencies).
   useEffect(() => {
     if (!editor) return
 
     let debounceTimer: ReturnType<typeof setTimeout>
     const handler = () => {
-      // Debounce to avoid interfering with in-progress comment additions
       clearTimeout(debounceTimer)
       debounceTimer = setTimeout(() => {
-        // Skip if a comment is being added right now
         if (pendingCommentRef.current) return
 
         const editorIds = new Set<string>()
@@ -119,7 +123,7 @@ export default function App() {
           })
         })
 
-        for (const comment of comments) {
+        for (const comment of commentsRef.current) {
           if (!editorIds.has(comment.id)) {
             deleteComment(comment.id)
           }
@@ -132,7 +136,7 @@ export default function App() {
       clearTimeout(debounceTimer)
       editor.off('update', handler)
     }
-  }, [editor, comments, deleteComment])
+  }, [editor, deleteComment])
 
   const handleCopy = () => {
     if (!editor) return

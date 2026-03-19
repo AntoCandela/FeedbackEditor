@@ -5,9 +5,15 @@ interface ParseResult {
   comments: Comment[]
 }
 
+// Hoisted static regexes to avoid re-creation on every call (js-hoist-regexp)
+const CODE_BLOCK_RE = /```[\s\S]*?```/g
+const CODE_BLOCK_PLACEHOLDER_RE = /__CODE_BLOCK_(\d+)__/g
+const SYSTEM_PROMPT_RE = /^\[SYSTEM:[\s\S]*?\]\s*\n*/m
+const COMMENT_RE = /\{start-comment\}(.*?)\{end-comment:\s*(.*?)\}/g
+
 function maskCodeBlocks(md: string): { masked: string; blocks: string[] } {
   const blocks: string[] = []
-  const masked = md.replace(/```[\s\S]*?```/g, (match) => {
+  const masked = md.replace(CODE_BLOCK_RE, (match) => {
     blocks.push(match)
     return `__CODE_BLOCK_${blocks.length - 1}__`
   })
@@ -15,11 +21,11 @@ function maskCodeBlocks(md: string): { masked: string; blocks: string[] } {
 }
 
 function unmaskCodeBlocks(text: string, blocks: string[]): string {
-  return text.replace(/__CODE_BLOCK_(\d+)__/g, (_, index) => blocks[Number(index)])
+  return text.replace(CODE_BLOCK_PLACEHOLDER_RE, (_, index) => blocks[Number(index)])
 }
 
 function stripSystemPrompt(md: string): string {
-  return md.replace(/^\[SYSTEM:[\s\S]*?\]\s*\n*/m, '')
+  return md.replace(SYSTEM_PROMPT_RE, '')
 }
 
 export function parseMarkdown(md: string): ParseResult {
@@ -27,8 +33,9 @@ export function parseMarkdown(md: string): ParseResult {
   const { masked, blocks } = maskCodeBlocks(stripped)
   const comments: Comment[] = []
 
-  const pattern = /\{start-comment\}(.*?)\{end-comment:\s*(.*?)\}/g
-  const processed = masked.replace(pattern, (_, highlighted: string, feedback: string) => {
+  // Reset lastIndex since these are global regexes reused across calls
+  COMMENT_RE.lastIndex = 0
+  const processed = masked.replace(COMMENT_RE, (_, highlighted: string, feedback: string) => {
     const id = crypto.randomUUID()
     comments.push({
       id,

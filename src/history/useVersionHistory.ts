@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react'
 import type { Comment } from '../comments/types'
 import type { Version } from './types'
 
-const STORAGE_KEY = 'feedbackeditor-versions'
+const STORAGE_KEY = 'feedbackeditor-versions:v1'
 
 function loadFromStorage(): Version[] {
   try {

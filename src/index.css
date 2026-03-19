@@ -39,3 +39,12 @@ body {
   background-color: var(--comment-active-bg);
   border-bottom-color: var(--comment-active-border);
 }
+
+@keyframes toast-enter {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.toast-enter {
+  animation: toast-enter 200ms ease-out;
+}

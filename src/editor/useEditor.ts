@@ -8,7 +8,9 @@ import { TableHeader } from '@tiptap/extension-table-header'
 import { TaskList } from '@tiptap/extension-task-list'
 import { TaskItem } from '@tiptap/extension-task-item'
 import { Link } from '@tiptap/extension-link'
+import { Placeholder } from '@tiptap/extension-placeholder'
 import { CommentMark } from '../comments/CommentMark'
+import { SlashCommands } from './slash-commands/extension'
 
 interface EditorOptions {
   content?: string
@@ -28,6 +30,8 @@ export function useAppEditor(options: EditorOptions = {}) {
       TaskList,
       TaskItem.configure({ nested: true }),
       Link.configure({ openOnClick: true, autolink: true }),
+      Placeholder.configure({ placeholder: 'Type / for commands...' }),
+      SlashCommands,
       CommentMark,
     ],
     content: content ?? '',

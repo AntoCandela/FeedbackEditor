@@ -76,6 +76,15 @@ body {
   outline: none;
 }
 
+/* Placeholder */
+.ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: var(--text-tertiary);
+  pointer-events: none;
+  height: 0;
+}
+
 /* Tables */
 .ProseMirror table {
   border-collapse: collapse;

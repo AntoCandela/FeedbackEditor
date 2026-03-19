@@ -19,8 +19,14 @@ export function EditorPanel({ editor, onClickComment }: EditorPanelProps) {
   }
 
   return (
-    <div className="flex-1 p-6 overflow-y-auto" onClick={handleClick}>
-      <EditorContent editor={editor} />
+    <div
+      className="flex-1 px-8 py-6 overflow-y-auto"
+      style={{ background: 'var(--bg-primary)' }}
+      onClick={handleClick}
+    >
+      <div className="max-w-prose mx-auto">
+        <EditorContent editor={editor} />
+      </div>
     </div>
   )
 }

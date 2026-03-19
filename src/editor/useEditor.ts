@@ -3,7 +3,13 @@ import StarterKit from '@tiptap/starter-kit'
 import { Markdown } from 'tiptap-markdown'
 import { CommentMark } from '../comments/CommentMark'
 
-export function useAppEditor(content?: string) {
+interface EditorOptions {
+  content?: string
+  onPaste?: () => void
+}
+
+export function useAppEditor(options: EditorOptions = {}) {
+  const { content, onPaste } = options
   const editor = useTiptapEditor({
     extensions: [
       StarterKit,
@@ -14,6 +20,10 @@ export function useAppEditor(content?: string) {
     editorProps: {
       attributes: {
         class: 'prose prose-sm max-w-none focus:outline-none min-h-full',
+      },
+      handlePaste: () => {
+        onPaste?.()
+        return false
       },
     },
   })

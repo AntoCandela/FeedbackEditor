@@ -1,12 +1,98 @@
 @import "tailwindcss";
 
+:root {
+  --bg-primary: #FAFAF9;
+  --bg-surface: #FFFFFF;
+  --bg-surface-alt: #F5F5F4;
+  --border: #E7E5E4;
+  --text-primary: #1C1917;
+  --text-secondary: #78716C;
+  --text-tertiary: #A8A29E;
+  --accent: #2563EB;
+  --accent-hover: #1D4ED8;
+  --cta-bg: #1C1917;
+  --cta-text: #FFFFFF;
+  --comment-bg: #FEF3C7;
+  --comment-border: #F59E0B;
+  --comment-active-bg: #FDE68A;
+  --comment-active-border: #D97706;
+  --success: #16A34A;
+  --danger: #DC2626;
+  --font-heading: 'Source Serif 4 Variable', Georgia, serif;
+  --font-body: 'DM Sans Variable', system-ui, sans-serif;
+}
+
+body {
+  font-family: var(--font-body);
+  color: var(--text-primary);
+  background: var(--bg-primary);
+}
+
 .comment-highlight {
-  background-color: #FFF3CD;
+  background-color: var(--comment-bg);
   cursor: pointer;
-  border-bottom: 2px solid #F0C36D;
+  border-bottom: 2px solid var(--comment-border);
+  border-radius: 2px;
 }
 
 .comment-highlight.active {
-  background-color: #FFE69C;
-  border-bottom-color: #E0A800;
+  background-color: var(--comment-active-bg);
+  border-bottom-color: var(--comment-active-border);
+}
+
+@keyframes toast-enter {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.toast-enter {
+  animation: toast-enter 200ms ease-out;
+}
+
+@keyframes comment-card-enter {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.comment-card {
+  animation: comment-card-enter 200ms ease-out;
+}
+
+.ProseMirror {
+  font-family: var(--font-body);
+  color: var(--text-primary);
+  line-height: 1.7;
+  max-width: 65ch;
+}
+
+.ProseMirror h1,
+.ProseMirror h2,
+.ProseMirror h3 {
+  font-family: var(--font-heading);
+}
+
+.ProseMirror:focus {
+  outline: none;
+}
+
+.sidebar-collapsible {
+  transition: width 200ms ease-out;
+  overflow: hidden;
+}
+
+@keyframes sidebar-slide-in {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+.sidebar-slide-in {
+  animation: sidebar-slide-in 200ms ease-out;
+}
+
+@media (max-width: 1023px) {
+  .sidebar-collapsible { width: 240px; }
+}
+
+@media (max-width: 767px) {
+  .header-label { display: none; }
 }

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { Pencil, X } from 'lucide-react'
 import type { Comment } from './types'
 
 interface CommentCardProps {
@@ -31,12 +32,20 @@ export function CommentCard({ comment, isActive, onUpdate, onDelete, onClick }: 
     <div
       id={`comment-card-${comment.id}`}
       onClick={() => onClick(comment.id)}
-      className={`p-3 mb-2 rounded border cursor-pointer transition-colors ${
-        isActive ? 'border-blue-400 bg-blue-50' : 'border-gray-200 bg-white hover:border-gray-300'
+      className={`comment-card p-3 mb-2 rounded cursor-pointer transition-all duration-150 ease-out ${
+        isActive
+          ? 'border-l-4 border-l-[var(--accent)] border-t border-r border-b border-t-[var(--border)] border-r-[var(--border)] border-b-[var(--border)]'
+          : 'border border-[var(--border)] hover:border-[var(--text-tertiary)]'
       }`}
+      style={{
+        backgroundColor: isActive ? 'var(--bg-surface-alt)' : 'var(--bg-surface)',
+      }}
     >
-      <p className="text-xs text-gray-500 mb-1 truncate italic">
-        "{comment.highlightedText}"
+      <p
+        className="text-xs mb-1 truncate italic"
+        style={{ color: 'var(--text-tertiary)' }}
+      >
+        &ldquo;{comment.highlightedText}&rdquo;
       </p>
       {isEditing ? (
         <textarea
@@ -45,29 +54,39 @@ export function CommentCard({ comment, isActive, onUpdate, onDelete, onClick }: 
           onChange={e => setDraft(e.target.value)}
           onBlur={handleSave}
           onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSave() } }}
-          className="w-full text-sm p-1 border border-gray-300 rounded resize-none focus:outline-none focus:border-blue-400"
+          className="w-full text-sm p-1 border rounded resize-none focus:outline-none"
+          style={{
+            borderColor: 'var(--border)',
+            color: 'var(--text-primary)',
+          }}
           rows={2}
           placeholder="Type your feedback..."
         />
       ) : (
-        <p className="text-sm text-gray-800">{comment.text || <span className="text-gray-400">No feedback yet</span>}</p>
+        <p className="text-sm" style={{ color: 'var(--text-primary)' }}>
+          {comment.text || <span style={{ color: 'var(--text-tertiary)' }}>No feedback yet</span>}
+        </p>
       )}
       <div className="flex justify-end gap-1 mt-1">
         {!isEditing && (
           <button
             onClick={e => { e.stopPropagation(); setIsEditing(true) }}
-            className="text-xs text-gray-400 hover:text-blue-600 p-1"
+            className="flex items-center gap-1 text-xs p-1 transition-colors duration-150 ease-out hover:text-[var(--accent)]"
+            style={{ color: 'var(--text-tertiary)' }}
             title="Edit"
           >
-            ✎
+            <Pencil size={14} />
+            <span>edit</span>
           </button>
         )}
         <button
           onClick={e => { e.stopPropagation(); onDelete(comment.id) }}
-          className="text-xs text-gray-400 hover:text-red-600 p-1"
+          className="flex items-center gap-1 text-xs p-1 transition-colors duration-150 ease-out hover:text-[var(--danger)]"
+          style={{ color: 'var(--text-tertiary)' }}
           title="Delete"
         >
-          ✕
+          <X size={14} />
+          <span>delete</span>
         </button>
       </div>
     </div>

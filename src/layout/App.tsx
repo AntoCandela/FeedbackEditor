@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef, type RefObject } from 'react'
+import { Clock } from 'lucide-react'
 import { useKeyboardShortcuts } from '../editor/useKeyboardShortcuts'
 import { useAppEditor } from '../editor/useEditor'
 import { EditorPanel } from '../editor/EditorPanel'
@@ -12,13 +13,17 @@ import { useCopyToClipboard } from '../export/useCopyToClipboard'
 import { getMarkdown } from '../editor/getMarkdown'
 import { useVersionHistory } from '../history/useVersionHistory'
 import { VersionHistoryDropdown } from '../history/VersionHistoryDropdown'
+import { useToast } from '../toast/useToastContext'
+import { CopyPreview } from '../export/CopyPreview'
+import { OnboardingOverlay } from '../onboarding/OnboardingOverlay'
 
 const SAMPLE_MARKDOWN = `# Welcome to FeedbackEditor
 
 Paste your AI-generated text here and select any text to add comments.`
 
+const SIDEBAR_KEY = 'feedbackeditor-sidebar:v1'
+
 export default function App() {
-  const editor = useAppEditor(SAMPLE_MARKDOWN)
   const {
     comments,
     addComment,
@@ -29,13 +34,58 @@ export default function App() {
     setActiveCommentId,
   } = useComments()
 
-  const { copied, error: copyError, copy, fallbackText, clearFallback } = useCopyToClipboard()
+  const { copy } = useCopyToClipboard()
   const { versions, saveVersion, loadVersion, clearHistory } = useVersionHistory()
   const [showHistory, setShowHistory] = useState(false)
   const pendingCommentRef = useRef<string | null>(null)
-  // Ref to avoid re-registering editor update handler on every comment change (rerender-dependencies)
   const commentsRef: RefObject<Comment[]> = useRef(comments)
   useEffect(() => { commentsRef.current = comments }, [comments])
+
+  const { showToast } = useToast()
+
+  // Sidebar state with localStorage persistence
+  const [sidebarOpen, setSidebarOpen] = useState(() => {
+    try { return localStorage.getItem(SIDEBAR_KEY) !== 'closed' } catch { return true }
+  })
+  const toggleSidebar = () => {
+    setSidebarOpen(prev => {
+      const next = !prev
+      try { localStorage.setItem(SIDEBAR_KEY, next ? 'open' : 'closed') } catch { /* noop */ }
+      return next
+    })
+  }
+
+  // Mobile detection for overlay sidebar
+  const [isMobile, setIsMobile] = useState(
+    () => window.matchMedia('(max-width: 767px)').matches,
+  )
+  useEffect(() => {
+    const mql = window.matchMedia('(max-width: 767px)')
+    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches)
+    mql.addEventListener('change', handler)
+    return () => mql.removeEventListener('change', handler)
+  }, [])
+
+  // Paste detection with ref to break circular dependency with editor
+  const pasteTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const handlePasteRef = useRef<() => void>(() => {})
+
+  const editor = useAppEditor({
+    content: SAMPLE_MARKDOWN,
+    onPaste: () => handlePasteRef.current(),
+  })
+
+  useEffect(() => {
+    handlePasteRef.current = () => {
+      if (pasteTimerRef.current) clearTimeout(pasteTimerRef.current)
+      pasteTimerRef.current = setTimeout(() => {
+        if (!editor) return
+        const markdown = getMarkdown(editor)
+        saveVersion(markdown, commentsRef.current, 'paste')
+        showToast('Content saved to history', 'info')
+      }, 500)
+    }
+  }, [editor, saveVersion, showToast])
 
   const handleAddComment = useCallback((selectedText: string) => {
     if (!editor) return
@@ -43,7 +93,6 @@ export default function App() {
     editor.chain().setComment(id).run()
     addComment(id, '', selectedText)
     pendingCommentRef.current = id
-    // Delay setting active so the card renders first, then focus
     setTimeout(() => {
       setActiveCommentId(id)
       pendingCommentRef.current = null
@@ -76,18 +125,16 @@ export default function App() {
   const handleRevert = (id: string) => {
     const version = loadVersion(id)
     if (!version || !editor) return
-    // Auto-save current state before reverting, but only if content differs from latest version
     const currentMarkdown = getMarkdown(editor)
     const latestVersion = versions[0]
     if (!latestVersion || latestVersion.markdown !== currentMarkdown) {
       saveVersion(currentMarkdown, comments, 'copy')
     }
-    // Load the selected version
     editor.commands.setContent(version.markdown)
-    // Clear current comments and restore version's comments (batch instead of N individual deletes)
     clearComments()
     version.comments.forEach(c => addComment(c.id, c.text, c.highlightedText))
     setShowHistory(false)
+    showToast('Version restored', 'info')
   }
 
   // Highlight active comment in editor + scroll sidebar card into view
@@ -103,8 +150,7 @@ export default function App() {
     }
   }, [activeCommentId])
 
-  // Clean up orphan comments when editor content changes.
-  // Uses commentsRef to avoid re-registering the handler on every comment change (rerender-dependencies).
+  // Clean up orphan comments when editor content changes
   useEffect(() => {
     if (!editor) return
 
@@ -138,14 +184,20 @@ export default function App() {
     }
   }, [editor, deleteComment])
 
-  const handleCopy = () => {
+  const handleCopy = async () => {
     if (!editor) return
-    // Save version before copy
     const currentMarkdown = getMarkdown(editor)
     saveVersion(currentMarkdown, comments, 'copy')
     const markdown = serializeMarkdown(editor.getJSON(), comments)
-    copy(markdown)
+    try {
+      await copy(markdown)
+      showToast('Copied to clipboard', 'success')
+    } catch {
+      showToast('Clipboard access denied', 'error')
+    }
   }
+
+  const previewMarkdown = editor ? serializeMarkdown(editor.getJSON(), comments) : ''
 
   useKeyboardShortcuts({
     editor,
@@ -160,16 +212,21 @@ export default function App() {
     <div className="flex flex-col h-screen">
       <HeaderToolbar
         onCopy={handleCopy}
-        copied={copied}
-        copyError={copyError}
         commentCount={comments.length}
+        sidebarOpen={sidebarOpen}
+        onToggleSidebar={toggleSidebar}
         historyButton={
           <div className="relative">
             <button
               onClick={() => setShowHistory(!showHistory)}
-              className="px-4 py-2 text-sm bg-gray-100 text-gray-700 rounded hover:bg-gray-200"
+              className="inline-flex items-center gap-1.5 px-3 py-2 text-sm rounded border transition-colors duration-150"
+              style={{ background: 'transparent', borderColor: 'var(--border)', color: 'var(--text-secondary)' }}
             >
-              History {versions.length > 0 && `(${versions.length})`}
+              <Clock size={16} />
+              <span className="header-label">History</span>
+              {versions.length > 0 && (
+                <span className="text-xs opacity-60">({versions.length})</span>
+              )}
             </button>
             {showHistory && (
               <VersionHistoryDropdown
@@ -182,6 +239,7 @@ export default function App() {
           </div>
         }
       />
+      <CopyPreview markdown={previewMarkdown} onCopy={handleCopy} hasComments={comments.length > 0} />
       <main className="flex flex-1 overflow-hidden">
         <EditorPanel
           editor={editor}
@@ -196,27 +254,12 @@ export default function App() {
           onUpdate={updateComment}
           onDelete={handleDeleteComment}
           onClickComment={handleClickSidebarComment}
+          open={sidebarOpen}
+          overlay={isMobile}
+          onClose={() => setSidebarOpen(false)}
         />
       </main>
-
-      {fallbackText && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-[600px] max-h-[80vh] flex flex-col">
-            <h3 className="text-lg font-semibold mb-2">Copy Manually</h3>
-            <p className="text-sm text-gray-500 mb-3">Clipboard access was denied. Select all text below and copy with Ctrl+C / Cmd+C.</p>
-            <textarea
-              readOnly
-              value={fallbackText}
-              className="flex-1 min-h-[300px] p-3 border border-gray-300 rounded font-mono text-sm resize-none"
-              onFocus={e => e.target.select()}
-              autoFocus
-            />
-            <div className="flex justify-end mt-4">
-              <button onClick={clearFallback} className="px-4 py-2 text-sm bg-gray-100 text-gray-700 rounded hover:bg-gray-200">Close</button>
-            </div>
-          </div>
-        </div>
-      )}
+      <OnboardingOverlay />
     </div>
   )
 }

@@ -8,9 +8,9 @@ import { CommentSidebar } from '../comments/CommentSidebar'
 import { HeaderToolbar } from './HeaderToolbar'
 import { serializeMarkdown } from '../export/serializeMarkdown'
 import { useCopyToClipboard } from '../export/useCopyToClipboard'
+import { getMarkdown } from '../editor/getMarkdown'
 import { useVersionHistory } from '../history/useVersionHistory'
 import { VersionHistoryDropdown } from '../history/VersionHistoryDropdown'
-import type { MarkdownStorage } from 'tiptap-markdown'
 
 const SAMPLE_MARKDOWN = `# Welcome to FeedbackEditor
 
@@ -23,7 +23,6 @@ export default function App() {
     addComment,
     updateComment,
     deleteComment,
-    clearComments: _clearComments,
     activeCommentId,
     setActiveCommentId,
   } = useComments()
@@ -73,7 +72,7 @@ export default function App() {
     const version = loadVersion(id)
     if (!version || !editor) return
     // Auto-save current state before reverting, but only if content differs from latest version
-    const currentMarkdown = (editor.storage as unknown as { markdown: MarkdownStorage }).markdown?.getMarkdown?.() ?? ''
+    const currentMarkdown = getMarkdown(editor)
     const latestVersion = versions[0]
     if (!latestVersion || latestVersion.markdown !== currentMarkdown) {
       saveVersion(currentMarkdown, comments, 'copy')
@@ -138,7 +137,7 @@ export default function App() {
   const handleCopy = () => {
     if (!editor) return
     // Save version before copy
-    const currentMarkdown = (editor.storage as unknown as { markdown: MarkdownStorage }).markdown?.getMarkdown?.() ?? ''
+    const currentMarkdown = getMarkdown(editor)
     saveVersion(currentMarkdown, comments, 'copy')
     const markdown = serializeMarkdown(editor.getJSON(), comments)
     copy(markdown)

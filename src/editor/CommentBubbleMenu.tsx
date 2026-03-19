@@ -1,20 +1,10 @@
 import { BubbleMenu } from '@tiptap/react/menus'
 import type { Editor } from '@tiptap/core'
+import { selectionOverlapsComment } from './selectionUtils'
 
 interface CommentBubbleMenuProps {
   editor: Editor
   onAddComment: (selectedText: string) => void
-}
-
-function selectionOverlapsComment(editor: Editor): boolean {
-  const { from, to } = editor.state.selection
-  let overlaps = false
-  editor.state.doc.nodesBetween(from, to, (node) => {
-    if (node.marks?.some(mark => mark.type.name === 'comment')) {
-      overlaps = true
-    }
-  })
-  return overlaps
 }
 
 export function CommentBubbleMenu({ editor, onAddComment }: CommentBubbleMenuProps) {

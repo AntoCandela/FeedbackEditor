@@ -2,23 +2,13 @@ import { useEffect, useRef, useCallback } from 'react'
 import type { Editor } from '@tiptap/core'
 import type { Version } from '../history/types'
 import type { Comment } from '../comments/types'
-import type { MarkdownStorage } from 'tiptap-markdown'
+import { selectionOverlapsComment } from './selectionUtils'
+import { getMarkdown } from './getMarkdown'
 
 const isMac = typeof navigator !== 'undefined' && /Mac/.test(navigator.platform)
 
 function isModKey(e: KeyboardEvent): boolean {
   return isMac ? e.metaKey : e.ctrlKey
-}
-
-function selectionOverlapsComment(editor: Editor): boolean {
-  const { from, to } = editor.state.selection
-  let overlaps = false
-  editor.state.doc.nodesBetween(from, to, (node) => {
-    if (node.marks?.some(mark => mark.type.name === 'comment')) {
-      overlaps = true
-    }
-  })
-  return overlaps
 }
 
 interface KeyboardShortcutDeps {
@@ -93,7 +83,7 @@ export function useKeyboardShortcuts({
 
       // First press: save current state
       if (currentIndex === -1) {
-        const markdown = (editor.storage as unknown as { markdown: MarkdownStorage }).markdown?.getMarkdown?.() ?? ''
+        const markdown = getMarkdown(editor)
         currentStateRef.current = { markdown, comments: structuredClone(comments) }
         versionIndexRef.current = 0
         onRevert(versions[0].id)

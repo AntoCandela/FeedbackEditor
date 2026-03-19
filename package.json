@@ -1,12 +1,15 @@
 {
   "name": "feedback-editor",
-  "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
+  "description": "A rich-text editor for adding inline feedback comments to AI-generated content. Built with React, Tiptap, and Tailwind CSS.",
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "preview": "vite preview"
   },
   "dependencies": {

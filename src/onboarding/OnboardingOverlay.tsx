@@ -1,39 +1,43 @@
-import { useCallback, useEffect, useSyncExternalStore, type ReactNode } from 'react'
+import { useState, useEffect, useCallback, type ReactNode } from 'react'
 import { useOnboarding } from './useOnboarding'
 import { ONBOARDING_STEPS } from './steps'
 import { OnboardingTooltip } from './OnboardingTooltip'
 
-function useAnchorRect(active: boolean, step: number): DOMRect | null {
-  const subscribe = useCallback(
-    (notify: () => void) => {
-      window.addEventListener('resize', notify)
-      return () => window.removeEventListener('resize', notify)
-    },
-    [],
-  )
-
-  const getSnapshot = useCallback((): DOMRect | null => {
-    if (!active) return null
-    const selector = ONBOARDING_STEPS[step]?.anchorSelector
-    if (!selector) return null
-    const el = document.querySelector(selector)
-    return el ? el.getBoundingClientRect() : null
-  }, [active, step])
-
-  return useSyncExternalStore(subscribe, getSnapshot)
+function getAnchorRect(active: boolean, step: number): DOMRect | null {
+  if (!active) return null
+  const selector = ONBOARDING_STEPS[step]?.anchorSelector
+  if (!selector) return null
+  const el = document.querySelector(selector)
+  return el ? el.getBoundingClientRect() : null
 }
 
 export function OnboardingOverlay(): ReactNode {
   const { active, step, totalSteps, next, back, dismiss } = useOnboarding()
-  const anchorRect = useAnchorRect(active, step)
+  // Initial value computed during render; resize updates via effect
+  const [anchorRect, setAnchorRect] = useState(() => getAnchorRect(active, step))
+
+  const handleResize = useCallback(() => {
+    setAnchorRect(getAnchorRect(active, step))
+  }, [active, step])
+
+  // Re-compute when step changes (lazy init only runs on mount)
+  // Using a key pattern: track step to detect changes
+  const [prevStep, setPrevStep] = useState(step)
+  if (step !== prevStep) {
+    setPrevStep(step)
+    setAnchorRect(getAnchorRect(active, step))
+  }
+
+  useEffect(() => {
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [handleResize])
 
   useEffect(() => {
     if (!active) return
-
-    function handleKeyDown(e: KeyboardEvent) {
+    const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') dismiss()
     }
-
     document.addEventListener('keydown', handleKeyDown)
     return () => document.removeEventListener('keydown', handleKeyDown)
   }, [active, dismiss])

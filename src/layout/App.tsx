@@ -90,7 +90,9 @@ export default function App() {
   const handleAddComment = useCallback((selectedText: string) => {
     if (!editor) return
     const id = crypto.randomUUID()
-    editor.chain().setComment(id).run()
+    const { to } = editor.state.selection
+    // Apply comment mark, then collapse selection to end so bubble menu dismisses
+    editor.chain().setComment(id).setTextSelection(to).run()
     addComment(id, '', selectedText)
     pendingCommentRef.current = id
     setTimeout(() => {

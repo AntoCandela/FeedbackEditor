@@ -12,6 +12,9 @@ declare module '@tiptap/core' {
 export const CommentMark = Mark.create({
   name: 'comment',
 
+  // Prevent comment mark from bleeding into adjacent text when typing/selecting at boundaries
+  inclusive: false,
+
   addAttributes() {
     return {
       commentId: {

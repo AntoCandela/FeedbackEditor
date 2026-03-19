@@ -57,3 +57,42 @@ body {
 .comment-card {
   animation: comment-card-enter 200ms ease-out;
 }
+
+.ProseMirror {
+  font-family: var(--font-body);
+  color: var(--text-primary);
+  line-height: 1.7;
+  max-width: 65ch;
+}
+
+.ProseMirror h1,
+.ProseMirror h2,
+.ProseMirror h3 {
+  font-family: var(--font-heading);
+}
+
+.ProseMirror:focus {
+  outline: none;
+}
+
+.sidebar-collapsible {
+  transition: width 200ms ease-out;
+  overflow: hidden;
+}
+
+@keyframes sidebar-slide-in {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+.sidebar-slide-in {
+  animation: sidebar-slide-in 200ms ease-out;
+}
+
+@media (max-width: 1023px) {
+  .sidebar-collapsible { width: 240px; }
+}
+
+@media (max-width: 767px) {
+  .header-label { display: none; }
+}

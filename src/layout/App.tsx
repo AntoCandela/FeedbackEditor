@@ -149,7 +149,6 @@ export default function App() {
     onAddComment: handleAddComment,
     versions,
     onRevert: handleRevert,
-    saveVersion,
     comments,
   })
 

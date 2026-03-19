@@ -1,6 +1,6 @@
 import { renderHook, act } from '@testing-library/react'
 import { describe, it, expect, beforeEach } from 'vitest'
-import { useVersionHistory } from './useVersionHistory'
+import { useVersionHistory } from '../../src/history/useVersionHistory'
 
 const STORAGE_KEY = 'feedbackeditor-versions'
 
@@ -23,6 +23,16 @@ describe('useVersionHistory', () => {
     expect(result.current.versions[0].markdown).toBe('# Hello')
     expect(result.current.versions[0].trigger).toBe('copy')
     expect(result.current.versions[0].comments).toEqual([])
+  })
+
+  it('saves version with comments', () => {
+    const { result } = renderHook(() => useVersionHistory())
+    const comments = [{ id: 'c1', text: 'Fix', highlightedText: 'text', createdAt: 1 }]
+    act(() => {
+      result.current.saveVersion('Content', comments, 'copy')
+    })
+    expect(result.current.versions[0].comments).toHaveLength(1)
+    expect(result.current.versions[0].comments[0].text).toBe('Fix')
   })
 
   it('prepends new versions (newest first)', () => {
@@ -93,5 +103,25 @@ describe('useVersionHistory', () => {
     })
     expect(result.current.versions).toEqual([])
     expect(localStorage.getItem(STORAGE_KEY)).toBe('[]')
+  })
+
+  it('generates unique ids for each version', () => {
+    const { result } = renderHook(() => useVersionHistory())
+    act(() => {
+      result.current.saveVersion('A', [], 'copy')
+      result.current.saveVersion('B', [], 'copy')
+    })
+    expect(result.current.versions[0].id).not.toBe(result.current.versions[1].id)
+  })
+
+  it('records timestamp on each version', () => {
+    const before = Date.now()
+    const { result } = renderHook(() => useVersionHistory())
+    act(() => {
+      result.current.saveVersion('Timed', [], 'copy')
+    })
+    const after = Date.now()
+    expect(result.current.versions[0].timestamp).toBeGreaterThanOrEqual(before)
+    expect(result.current.versions[0].timestamp).toBeLessThanOrEqual(after)
   })
 })

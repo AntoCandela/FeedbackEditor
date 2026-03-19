@@ -17,7 +17,6 @@ interface KeyboardShortcutDeps {
   onAddComment: (selectedText: string) => void
   versions: Version[]
   onRevert: (id: string) => void
-  saveVersion: (markdown: string, comments: Comment[], trigger: 'copy' | 'paste') => void
   comments: Comment[]
 }
 
@@ -27,7 +26,6 @@ export function useKeyboardShortcuts({
   onAddComment,
   versions,
   onRevert,
-  saveVersion,
   comments,
 }: KeyboardShortcutDeps) {
   const versionIndexRef = useRef(-1)
@@ -119,7 +117,7 @@ export function useKeyboardShortcuts({
       onRevert(versions[nextIndex].id)
       return
     }
-  }, [editor, onCopy, onAddComment, versions, onRevert, saveVersion, comments])
+  }, [editor, onCopy, onAddComment, versions, onRevert, comments])
 
   useEffect(() => {
     document.addEventListener('keydown', handleKeyDown)
